@@ -15,7 +15,8 @@ M_B  = mags_johnson[5,1:]
 M_V  = mags_johnson[6,1:]
 
 # take only solar metallicity models to start
-noah = (ah == 0.0) & (mh == 0.0)
+noah = (ah == 0.0) 
+mh   = mh[noah]
 teff = teff[noah]
 logg = logg[noah]
 M_U  = M_U[noah]
@@ -23,26 +24,34 @@ M_B  = M_B[noah]
 M_V  = M_V[noah]
 
 # unique values of each parameter
+umh   = np.unique(mh)
 uteff = np.unique(teff)
 ulogg = np.unique(logg)
 
 # master arrays
-magU = np.full((len(uteff), len(ulogg)), np.nan)
-magB = np.full((len(uteff), len(ulogg)), np.nan)
-magV = np.full((len(uteff), len(ulogg)), np.nan)
+magU = np.full((len(uteff), len(ulogg), len(umh)), np.nan)
+magB = np.full((len(uteff), len(ulogg), len(umh)), np.nan)
+magV = np.full((len(uteff), len(ulogg), len(umh)), np.nan)
 
-# loop through the logg's and populate the magnitude arrays
-for ig in np.arange(len(ulogg)):
+# loop through the mh's and logg's and populate the magnitude arrays
+for im in np.arange(len(umh)):
 
-    # at a fixed logg, note where you have magnitudes
-    ind_step = (logg == ulogg[ig])
-    fteff = teff[ind_step]
-    loc = np.in1d(uteff, fteff)
+    for ig in np.arange(len(ulogg)):
 
-    # populate master vectors
-    magU[loc,ig] = M_U[ind_step]
-    magB[loc,ig] = M_B[ind_step]
-    magV[loc,ig] = M_V[ind_step]
+        # at a fixed logg and mh, note which teffs have magnitudes
+        ind_step = (logg == ulogg[ig]) & (mh == umh[im])
+        fteff = teff[ind_step]
+        loc = np.in1d(uteff, fteff)
 
+        # populate master vectors
+        magU[loc, ig, im] = M_U[ind_step]
+        magB[loc, ig, im] = M_B[ind_step]
+        magV[loc, ig, im] = M_V[ind_step]
+
+
+plt.plot(np.log10(teff[(mh == umh[3]) & (logg == ulogg[4])]), \
+         M_U[(mh == umh[3]) & (logg == ulogg[4])], 'or')
+plt.plot(np.log10(uteff), magU[:, 4, 3], '.b')
+plt.show()
 
 
