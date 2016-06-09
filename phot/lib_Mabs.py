@@ -17,7 +17,7 @@ def lib_Mabs(band, teff, logg, zstar, rstar):
     lzstar = lib['zstar']
     lmlib  = lib['mlib']
     lband  = lib['band']
- 
+
     # extract the relevant bands
     maglib = lmlib[:,:,:,np.in1d(lband, band)]
 
