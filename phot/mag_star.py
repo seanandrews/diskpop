@@ -11,8 +11,8 @@ from extinct import extinct
 def mag_star(x, p):
 
     # parameter key: 
-    #    p = [teff, logg, zstar, rstar, pi, Av, ..., ...]
-    #            0,    1,     2,     3,  4,  5, ..., ...]
+    #    p = [teff, logg, zstar, rstar, pi, Av]
+    #            0,    1,     2,     3,  4,  5]
 
     # import the model library
     lib = np.load('maglib.npz')
@@ -46,4 +46,5 @@ def mag_star(x, p):
     # distance scaling for apparent magnitudes
     mapp = Mabs - 5.*np.log10(p[4]) - 5. + A_lambda
 
+    # return the star contribution
     return(mapp) 
