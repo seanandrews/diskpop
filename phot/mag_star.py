@@ -6,9 +6,7 @@
 import numpy as np
 import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
-from astropy.io import ascii
 from extinct import extinct
-import sys
 
 def mag_star(x, p):
 

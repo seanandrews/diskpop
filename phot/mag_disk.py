@@ -4,7 +4,7 @@
 #
 
 import numpy as np
-from astropy.io import ascii
+import pandas as pd
 
 def mag_disk(x, p, wl=0):
 
