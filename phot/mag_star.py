@@ -4,9 +4,11 @@
 #
 
 import numpy as np
+import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
 from astropy.io import ascii
 from extinct import extinct
+import sys
 
 def mag_star(x, p):
 
@@ -14,6 +16,25 @@ def mag_star(x, p):
     #    p = [teff, logg, zstar, rstar, pi, Av]
     #            0,    1,     2,     3,  4,  5]
 
+    # properly organize input bands (x), by sorting and uniqueing
+    # save the shuffling, so you can re-format back to inputs in the end
+    # this will also parse out an appropriate wavelength array for extinction
+    #
+    # load information about available bands in library
+    dt = {'name': np.str, 'wl': np.float64, 'zp': np.float64}
+    a = pd.read_csv('bandinfo.txt', names=['name', 'wl', 'zp'], dtype=dt)
+    band_nm = np.array(a['name'])
+    band_wl = np.array(a['wl'])
+    #
+    # sort the unique inputs and record that ordering for reshuffle later
+    xs  = np.argsort(x)
+    xus = np.argsort(xs)
+    u_x, u_ix = np.unique(x[xs], return_inverse=True)
+    bsel = np.in1d(np.array(band_nm), np.array(u_x))
+    psel = np.argsort(band_nm[bsel])
+    xin = band_nm[bsel]
+    xwl = band_wl[bsel]
+        
     # import the model library
     lib = np.load('maglib.npz')
     lteff  = lib['teff']
@@ -23,7 +44,7 @@ def mag_star(x, p):
     lband  = lib['band']
 
     # extract the relevant bands
-    maglib = lmlib[:,:,:,np.in1d(lband, x)]
+    maglib = lmlib[:,:,:,np.in1d(lband, xin)]
 
     # if the input parameters are exactly on the model library grid, then just
     # use the grid; if not, then do the trilinear interpolation
@@ -36,15 +57,15 @@ def mag_star(x, p):
     # convert to standard absolute magnitudes
     Mabs = np.squeeze(mag_int) - 5.*np.log10(p[3]*6.96e10/3.0857e18) + 5.
 
-    # get wavelengths for each passband (must be a better way...)
-    bands = ascii.read('bandinfo.dat')
-    xwl = (bands['wl'])[np.in1d(bands['name'], x)]
-
     # calculate extinctions at each band
     A_lambda = extinct(xwl, p[5])
 
     # distance scaling for apparent magnitudes
     mapp = Mabs - 5.*np.log10(p[4]) - 5. + A_lambda
 
+    # reshuffle and populate an output apparent mag array in same ordering as
+    # requested input array
+    fmapp = ((mapp[psel])[u_ix])[xus]
+
     # return the star contribution
-    return(mapp) 
+    return(fmapp) 
