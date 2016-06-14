@@ -4,12 +4,13 @@
 
 import numpy as np
 import pandas as pd
+import time
 from scipy.interpolate import RegularGridInterpolator as RGI
 from extinct import extinct
 import matplotlib.pyplot as plt
 import sys
 
-def mag_model(x, p):
+def mag_model(x, p, lib=None):
 
     # parameter key: 
     #    p = [teff, logg, zstar, rstar, pi, Av, r_V^acc, psi, r_K^dust, T_s]
@@ -36,13 +37,15 @@ def mag_model(x, p):
     xzp = band_zp[bsel]
     xwl = band_wl[bsel]
         
-    # import the model library
-    lib = np.load('maglib.npz')
-    lteff  = lib['teff']
-    llogg  = lib['logg']
-    lzstar = lib['zstar']
-    lmlib  = lib['mlib']
-    lband  = lib['band']
+    # import the model library if you didn't pass it already
+    if (lib is None): 
+        lib = np.load('maglib.npz')		# bottleneck
+        lteff  = lib['teff']
+        llogg  = lib['logg']
+        lzstar = lib['zstar']
+        lmlib  = lib['mlib']
+        lband  = lib['band']
+    else: lteff, llogg, lzstar, lmlib, lband = lib
 
     # extract the relevant bands
     maglib = lmlib[:,:,:,np.in1d(lband, xin)]
