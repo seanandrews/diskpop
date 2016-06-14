@@ -71,19 +71,31 @@ def mag_model(x, p, lib=None):
     bet = 10.
     if (np.any(xin == 'Vj')):
         fstarV = np.squeeze(fstar[np.where(xin=='Vj')])
-        MabsV = np.squeeze(Mabs[np.where(xin=='Vj')])
     else:
-        fVint = RGI((lteff, llogg, lzstar), lmlib[:,:,:,np.where(lband=='Vj')])
+        fVint = RGI((lteff,llogg,lzstar), lmlib[:,:,:,np.where(lband=='Vj')])
         MabsV = np.squeeze(fVint(np.array([p[0], p[1], p[2]])) - \
                 5.*np.log10(p[3]*6.96e10/3.0857e18) + 5.)
         fstarV = np.squeeze(zpV*10.**(-0.4*(MabsV - 5.*np.log10(p[4])-5.)))
     #fveil = p[6]*fstarV + p[7]*(xwl-wlV)	# linear model
     fveil = p[6]*fstarV*(xwl/wlV)**p[7]		# power-law model
     fveil *= (1. - 1./(1.+np.exp(-bet*(xwl-wlJ))))	# taper veiling
+
+    # contribution from dust
+    wlL = np.squeeze(band_wl[np.where(band_nm=='IRAC1')])
+    zpL = np.squeeze(band_zp[np.where(band_nm=='IRAC1')])
+    if (np.any(xin == 'IRAC1')):
+        fstarL = np.squeeze(fstar[np.where(xin=='IRAC1')])
+    else:
+        fLint = RGI((lteff,llogg,lzstar), lmlib[:,:,:,np.where(lband=='IRAC1')])
+        MabsL = np.squeeze(fLint(np.array([p[0], p[1], p[2]])) - \
+                5.*np.log10(p[3]*6.96e10/3.0857e18) + 5.)
+        fstarL = np.squeeze(zpL*10.**(-0.4*(MabsL - 5.*np.log10(p[4])-5.)))
+    fdisk = p[8]*fstarL*(xwl/wlL)**(-p[9])
+    fdisk *= 1./(1.+np.exp(-bet*(xwl-wlJ)))		# taper dust
     
     # convert to composite apparent magnitudes and redden appropriately
     A_lambda = extinct(xwl, p[5])
-    mtot = -2.5*np.log10((fstar + fveil) / xzp) + A_lambda
+    mtot = -2.5*np.log10((fstar + fveil + fdisk) / xzp) + A_lambda
 
     # reshuffle and populate an output apparent mag array in same ordering as
     # requested input array
