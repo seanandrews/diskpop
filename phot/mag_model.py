@@ -74,7 +74,8 @@ def mag_model(x, p):
         MabsV = np.squeeze(fVint(np.array([p[0], p[1], p[2]])) - \
                 5.*np.log10(p[3]*6.96e10/3.0857e18) + 5.)
         fstarV = np.squeeze(zpV*10.**(-0.4*(MabsV - 5.*np.log10(p[4])-5.)))
-    fveil = p[6]*fstarV + p[7]*(xwl-wlV)
+    #fveil = p[6]*fstarV + p[7]*(xwl-wlV)	# linear model
+    fveil = p[6]*fstarV*(xwl/wlV)**p[7]		# power-law model
     fveil *= (1. - 1./(1.+np.exp(-bet*(xwl-wlJ))))	# taper veiling
     
     # convert to composite apparent magnitudes and redden appropriately
