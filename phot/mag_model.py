@@ -13,8 +13,8 @@ import sys
 def mag_model(x, p, lib=None):
 
     # parameter key: 
-    #    p = [teff, logg, zstar, rstar, pi, Av, r_V^acc, psi, r_K^dust, T_s]
-    #            0,    1,     2,     3,  4,  5,       6,   7,        8,   9]
+    #    p = [teff, logg, zstar, rstar, pi, Av, r_V^veil, eps, r_L^disk, zeta]
+    #            0,    1,     2,     3,  4,  5,        6,   7,        8,    9]
 
     # properly organize input bands (x), by sorting and uniqueing
     # save the shuffling, so you can re-format back to inputs in the end
@@ -58,11 +58,11 @@ def mag_model(x, p, lib=None):
         fint = RGI((lteff, llogg, lzstar), maglib)
         mag_int = fint(np.array([p[0], p[1], p[2]]))
 
-    # convert to standard absolute magnitudes
-    Mabs = np.squeeze(mag_int) - 5.*np.log10(p[3]*6.96e10/3.0857e18) + 5.
+    # convert to apparent magnitudes
+    mstar = np.squeeze(mag_int) - 5.*np.log10(p[3]*p[4]*6.96e10/3.0857e18) 
 
-    # apparent magnitudes --> flux densities (no extinction yet)
-    fstar = xzp*10.**(-0.4*(Mabs - 5.*np.log10(p[4]) - 5.)) 
+    # apparent magnitudes --> flux densities 
+    fstar = xzp*10.**(-0.4*mstar)
 
     # contribution from veiling
     wlV = np.squeeze(band_wl[np.where(band_nm=='Vj')])
@@ -76,9 +76,8 @@ def mag_model(x, p, lib=None):
         MabsV = np.squeeze(fVint(np.array([p[0], p[1], p[2]])) - \
                 5.*np.log10(p[3]*6.96e10/3.0857e18) + 5.)
         fstarV = np.squeeze(zpV*10.**(-0.4*(MabsV - 5.*np.log10(p[4])-5.)))
-    #fveil = p[6]*fstarV + p[7]*(xwl-wlV)	# linear model
-    fveil = p[6]*fstarV*(xwl/wlV)**p[7]		# power-law model
-    fveil *= (1. - 1./(1.+np.exp(-bet*(xwl-wlJ))))	# taper veiling
+    fveil = p[6]*fstarV*(xwl/wlV)**p[7]		
+    fveil *= (1. - 1./(1.+np.exp(-bet*(xwl-wlJ))))	
 
     # contribution from dust
     wlL = np.squeeze(band_wl[np.where(band_nm=='IRAC1')])
@@ -91,7 +90,7 @@ def mag_model(x, p, lib=None):
                 5.*np.log10(p[3]*6.96e10/3.0857e18) + 5.)
         fstarL = np.squeeze(zpL*10.**(-0.4*(MabsL - 5.*np.log10(p[4])-5.)))
     fdisk = p[8]*fstarL*(xwl/wlL)**(-p[9])
-    fdisk *= 1./(1.+np.exp(-bet*(xwl-wlJ)))		# taper dust
+    fdisk *= 1./(1.+np.exp(-bet*(xwl-wlJ)))	
     
     # convert to composite apparent magnitudes and redden appropriately
     A_lambda = extinct(xwl, p[5])
